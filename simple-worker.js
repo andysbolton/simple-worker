@@ -7,24 +7,27 @@
   }
 
   this.SimpleWorker = function(options) {
-    var func, args, handler, errHandler, runOnce
+    var func, args, scripts, handler, errHandler, runOnce
 
     func = options['func']
-
+    
     if (!isFunction(func)) {
       throw new Error('`func` needs to be a function.')
     }
 
     args = options['args']
+    scripts = options['importScripts'] || []
     handler = options['success'] || function() {}
     errHandler = options['error'] || function() {}
     runOnce = options['runOnce'] || false
 
     function setupOnMessage() {
-      onmessage = function(e) {
-        if (e.data.type == '__args') {
-          __func.apply(this, e.data.args)
-        }
+        onmessage = function (e) {
+            var scripts = e.data.scripts.join(', ');
+            this.importScripts.call(this, scripts);
+          if (e.data.type == '__args') {
+            __func.apply(this, e.data.args)
+          }
       }
     }
 
@@ -47,7 +50,8 @@
     this.run = function() {
       worker.postMessage({
         type: '__args',
-        args: Array.prototype.slice.call(arguments)
+        args: Array.prototype.slice.call(arguments),
+        scripts: scripts
       })
     }
 
